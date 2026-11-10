@@ -1,0 +1,44 @@
+# Integración continua: construye las imágenes y prueba la comunicación
+# entre contenedores en cada push y en cada pull request.
+name: CI - Docker
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-y-prueba:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v4
+
+      - name: Crear .env a partir del ejemplo
+        run: cp .env.example .env
+
+      - name: Construir las imágenes
+        run: docker compose build
+
+      - name: Levantar los contenedores
+        run: docker compose up -d
+
+      - name: Esperar a que la app responda
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fs http://localhost:3000/health; then echo; exit 0; fi
+            sleep 2
+          done
+          docker compose logs
+          exit 1
+
+      - name: Probar ida y vuelta (guardar y leer un plato)
+        run: |
+          curl -fs -X POST http://localhost:3000/api/platos \
+            -H "Content-Type: application/json" \
+            -d '{"nombre":"Plato CI","descripcion":"Creado por GitHub Actions","precio":1000}'
+          echo
+          curl -fs http://localhost:3000/api/platos | grep "Plato CI"
+
+      - name: Apagar y limpiar
+        if: always()
+        run: docker compose down -v
