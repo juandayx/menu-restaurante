@@ -6,8 +6,8 @@ Es un menú digital de restaurante que funciona en **dos contenedores comunicado
 
 | Servicio | Contenedor | Papel | Imagen |
 |---|---|---|---|
-| `app` | `menu-app` | Aplicación web y API (Node.js + Express) | Dockerfile propio sobre `node:20.18-alpine` |
-| `db` | `menu-db` | Base de datos | `postgres:16.4-alpine` con volumen `datos-menu` |
+| `app` | `<proyecto>-app-1` | Aplicación web y API (Node.js + Express) | Dockerfile propio sobre `node:20.18-alpine` |
+| `db` | `<proyecto>-db-1` | Base de datos | Dockerfile propio sobre `postgres:16.4-alpine`, con volumen `datos-menu` |
 
 La app se conecta a la base de datos usando el **nombre del servicio `db`** dentro de la red propia `red-menu`, no `localhost` ni una IP fija.
 
@@ -23,7 +23,14 @@ menu-restaurante/
 │   ├── server.js
 │   └── public/index.html
 ├── db/                     # Contenedor 2: base de datos
+│   ├── Dockerfile
 │   └── init.sql
+├── jenkins/                # Servidor Jenkins (Entrega 2)
+│   ├── Dockerfile
+│   └── docker-compose.yml
+├── scripts/
+│   └── test-integracion.sh # Prueba de comunicación entre contenedores
+├── Jenkinsfile             # Pipeline como código
 ├── .github/workflows/ci.yml  # Pipeline de GitHub Actions
 ├── docker-compose.yml
 ├── .env.example
@@ -92,3 +99,19 @@ También se puede probar desde el navegador: agregar un plato en el formulario y
 ## Integración continua
 
 El archivo `.github/workflows/ci.yml` se ejecuta en cada push y pull request. Construye las imágenes, levanta los contenedores y prueba que se pueda guardar y leer un plato.
+
+## Jenkins (Entrega 2)
+
+Jenkins corre en su propio contenedor, basado en `jenkins/jenkins:lts`, con el cliente de Docker y los plugins Git, GitHub, Pipeline, Docker Pipeline, Credentials Binding y Stage View.
+
+```bash
+cd jenkins
+docker compose up -d --build
+docker exec jenkins cat /var/jenkins_home/secrets/initialAdminPassword   # clave inicial
+```
+
+- Interfaz web: puerto `8080`
+- Credencial requerida en Jenkins: `menu-db-password` (tipo *Secret text*) con la contraseña de PostgreSQL
+- El `Jenkinsfile` define las etapas **Checkout → Build → Test** y un bloque **post** que limpia los contenedores
+- El pipeline se dispara solo con **Poll SCM** (revisa GitHub cada 2 minutos)
+- La prueba `scripts/test-integracion.sh` levanta el compose y verifica que la app llegue a la base de datos por el nombre del servicio `db`; si algo falla, el build falla
