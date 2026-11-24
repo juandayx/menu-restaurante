@@ -9,7 +9,7 @@ services:
       - "${APP_PORT}:3000"
     environment:
       APP_PORT: 3000
-      DB_HOST: localhost                       # nombre del servicio, NO localhost ni IP
+      DB_HOST: db                       # nombre del servicio, NO localhost ni IP
       DB_PORT: 5432
       DB_USER: ${POSTGRES_USER}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
