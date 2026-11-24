@@ -115,3 +115,5 @@ docker exec jenkins cat /var/jenkins_home/secrets/initialAdminPassword   # clave
 - El `Jenkinsfile` define las etapas **Checkout → Build → Test** y un bloque **post** que limpia los contenedores
 - El pipeline se dispara solo con **Poll SCM** (revisa GitHub cada 2 minutos)
 - La prueba `scripts/test-integracion.sh` levanta el compose y verifica que la app llegue a la base de datos por el nombre del servicio `db`; si algo falla, el build falla
+
+Prueba de disparo automatico de Jenkins
